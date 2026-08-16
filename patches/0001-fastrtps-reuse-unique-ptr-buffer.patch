@@ -1,0 +1,32 @@
+diff --git a/rmw_fastrtps_cpp/src/rmw_publish.cpp b/rmw_fastrtps_cpp/src/rmw_publish.cpp
+--- a/rmw_fastrtps_cpp/src/rmw_publish.cpp
++++ b/rmw_fastrtps_cpp/src/rmw_publish.cpp
+@@ -12,6 +12,7 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+ 
++#include <memory>
+ #include <vector>
+ 
+ #include "fastcdr/Cdr.h"
+@@ -171,13 +171,16 @@ publish_to_buffer_endpoints(
+   }
+ 
+   // Publish to per-subscriber peer-to-peer endpoints for non-CPU subscribers.
++  // Allocate the external storage once and reuse it for every endpoint. The
++  // synchronous write copies the serialized data before returning.
++  uint32_t serialized_size = callbacks->get_serialized_size(ros_message);
++  size_t buffer_size = serialized_size + 4;  // +4 for CDR encapsulation header
++  std::unique_ptr<uint8_t[]> buffer_data(new uint8_t[buffer_size]);
++
+   for (const auto & endpoint : state.endpoints) {
+-    uint32_t serialized_size = callbacks->get_serialized_size(ros_message);
+-    size_t buffer_size = serialized_size + 4;  // +4 for CDR encapsulation header
+-    std::vector<uint8_t> buffer_data(buffer_size);
+ 
+     eprosima::fastcdr::FastBuffer fast_buffer(
+-      reinterpret_cast<char *>(buffer_data.data()), buffer_size);
++      reinterpret_cast<char *>(buffer_data.get()), buffer_size);
+     eprosima::fastcdr::Cdr ser(
+       fast_buffer, eprosima::fastcdr::Cdr::DEFAULT_ENDIAN,
+       eprosima::fastcdr::CdrVersion::XCDRv1);

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>memfd_buffer_backend_benchmark</name>
+  <version>0.0.0</version>
+  <description>Inter-process and intra-process VA-sharing pub/sub benchmarks for the memfd-backed rosidl::Buffer backend.</description>
+
+  <maintainer email="kato.daisuke429@gmail.com">dskkato</maintainer>
+  <license>Apache-2.0</license>
+  <author email="kato.daisuke429@gmail.com">dskkato</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>memfd_buffer_backend</depend>
+  <depend>rclcpp</depend>
+  <depend>rcutils</depend>
+  <depend>rmw</depend>
+  <depend>rosidl_buffer</depend>
+  <depend>sensor_msgs</depend>
+  <exec_depend>python3</exec_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
