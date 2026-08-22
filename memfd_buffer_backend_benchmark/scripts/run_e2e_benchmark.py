@@ -242,6 +242,11 @@ def main():
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20260812)
+    parser.add_argument(
+        "--rmw-implementation",
+        default="rmw_fastrtps_cpp",
+        help="RMW implementation to use (default: rmw_fastrtps_cpp)",
+    )
     parser.add_argument("--variant", default="unspecified")
     parser.add_argument("--communications", default="inter_process,intra_process_va")
     parser.add_argument("--modes", default="cpu,memfd")
@@ -265,7 +270,7 @@ def main():
         parser.error("--warmup must be non-negative and --repeats must be positive")
 
     env = os.environ.copy()
-    env["RMW_IMPLEMENTATION"] = "rmw_fastrtps_cpp"
+    env["RMW_IMPLEMENTATION"] = args.rmw_implementation
     sizes = [int(value) for value in args.sizes.split(",") if value]
     communications = [value for value in args.communications.split(",") if value]
     modes = [value for value in args.modes.split(",") if value]

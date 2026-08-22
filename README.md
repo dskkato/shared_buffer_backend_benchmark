@@ -42,6 +42,24 @@ ros2 run memfd_buffer_backend_benchmark run_e2e_benchmark.py \
   --raw-output memfd-old-pubsub-raw.csv
 ```
 
+The runner accepts any installed RMW implementation. For a zenoh run, start
+the local router first and pass `--rmw-implementation rmw_zenoh_cpp`:
+
+```bash
+source ~/ros2_lyrical/install/setup.bash
+source install/setup.bash
+ros2 run rmw_zenoh_cpp rmw_zenohd &
+python3 src/memfd_buffer_backend_benchmark/memfd_buffer_backend_benchmark/scripts/run_e2e_benchmark.py \
+  --rmw-implementation rmw_zenoh_cpp \
+  --output benchmark-results-zenoh/zenoh.csv \
+  --raw-output benchmark-results-zenoh/raw/zenoh.csv \
+  --variant zenoh
+```
+
+No `rmw_fastrtps` patches are applied for the zenoh run. See
+[`ZENOH_BENCHMARK_REPORT.md`](ZENOH_BENCHMARK_REPORT.md) for the recorded
+lazy-only comparison and figures.
+
 Run the complete 16-way matrix:
 
 ```bash
