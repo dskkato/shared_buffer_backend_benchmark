@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate figures comparing the recorded fastrtps and zenoh benchmarks."""
+"""Generate figures comparing the recorded fastrtps lazy and zenoh benchmarks."""
 
 import argparse
 import csv
@@ -14,19 +14,13 @@ import matplotlib.pyplot as plt
 
 
 SIZES = (64, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216)
-VARIANTS = ("baseline", "unique_ptr", "lazy", "reserve")
+VARIANTS = ("lazy", "zenoh")
 COLORS = {
-    "baseline": "#4C566A",
-    "unique_ptr": "#5E81AC",
     "lazy": "#A3BE8C",
-    "reserve": "#D08770",
     "zenoh": "#BF616A",
 }
 LABELS = {
-    "baseline": "fastrtps baseline",
-    "unique_ptr": "fastrtps unique_ptr",
     "lazy": "fastrtps lazy",
-    "reserve": "fastrtps reserve",
     "zenoh": "zenoh",
 }
 PATHS = (
@@ -83,7 +77,7 @@ def setup_axis(axis):
 
 def plot_memfd_latency(data, output):
     figure, axis = plt.subplots(figsize=(10.5, 5.8))
-    for variant in (*VARIANTS, "zenoh"):
+    for variant in VARIANTS:
         values = [data[variant][("inter_process", "memfd", size)]["e2e"]["p50"] for size in SIZES]
         axis.plot(
             SIZES, values, marker="o", linewidth=2, markersize=4,
@@ -91,7 +85,7 @@ def plot_memfd_latency(data, output):
         )
     setup_axis(axis)
     axis.set_ylabel("End-to-end latency p50 (µs)")
-    axis.set_title("Inter-process memfd latency: zenoh vs fastrtps")
+    axis.set_title("Inter-process memfd latency: zenoh vs fastrtps lazy")
     axis.legend(ncol=2, frameon=False)
     figure.tight_layout()
     figure.savefig(output, dpi=180)
@@ -101,7 +95,7 @@ def plot_memfd_latency(data, output):
 def plot_backend_latency(data, output):
     figure, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=False)
     for axis, backend, title in zip(axes, ("cpu", "memfd"), ("CPU backend", "memfd backend")):
-        for variant, linestyle in (("baseline", "-"), ("zenoh", "--")):
+        for variant, linestyle in (("lazy", "-"), ("zenoh", "--")):
             for percentile_name, alpha in (("p50", 1.0), ("p95", 0.48)):
                 values = [
                     data[variant][("inter_process", backend, size)]["e2e"][percentile_name]
@@ -117,7 +111,7 @@ def plot_backend_latency(data, output):
         axis.set_xlabel("Payload")
         axis.set_ylabel("End-to-end latency (µs)")
         axis.legend(frameon=False, fontsize=8)
-    figure.suptitle("Inter-process p50 (opaque) and p95 (faded): zenoh vs fastrtps baseline")
+    figure.suptitle("Inter-process p50 (opaque) and p95 (faded): zenoh vs fastrtps lazy")
     figure.tight_layout()
     figure.savefig(output, dpi=180)
     plt.close(figure)
@@ -129,7 +123,7 @@ def plot_one_mib_distributions(raw, output):
         (axes[0], "e2e", "End-to-end latency", 4000, 100),
         (axes[1], "publish", "Publisher publish() duration", 1200, 50),
     ):
-        for variant in ("baseline", "zenoh"):
+        for variant in VARIANTS:
             values = raw[variant][("inter_process", "memfd", 1048576)][metric]
             bins = range(0, x_limit + bin_width, bin_width)
             axis.hist(
@@ -158,7 +152,7 @@ def plot_heatmap(data, output):
         matrix.append([
             100.0 * (
                 data["zenoh"][(communication, backend, size)]["e2e"]["p50"] /
-                data["baseline"][(communication, backend, size)]["e2e"]["p50"] - 1.0
+                data["lazy"][(communication, backend, size)]["e2e"]["p50"] - 1.0
             )
             for size in SIZES
         ])
@@ -170,7 +164,7 @@ def plot_heatmap(data, output):
     for row_index, row in enumerate(matrix):
         for column_index, value in enumerate(row):
             axis.text(column_index, row_index, f"{value:+.0f}%", ha="center", va="center", fontsize=8)
-    axis.set_title("Zenoh p50 change vs fastrtps baseline (negative is faster)")
+    axis.set_title("Zenoh p50 change vs fastrtps lazy (negative is faster)")
     figure.colorbar(image, ax=axis, label="Change in p50 (%)")
     figure.tight_layout()
     figure.savefig(output, dpi=180)
@@ -186,10 +180,7 @@ def main():
 
     fastrtps_dir = args.fastrtps_dir
     zenoh_dir = args.data_dir
-    raw = {
-        variant: read_raw(fastrtps_dir / "raw" / f"{variant}.csv")
-        for variant in VARIANTS
-    }
+    raw = {"lazy": read_raw(fastrtps_dir / "raw" / "lazy.csv")}
     raw["zenoh"] = read_raw(zenoh_dir / "raw" / "zenoh.csv")
     data = {variant: summarize(values) for variant, values in raw.items()}
 

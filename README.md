@@ -58,7 +58,7 @@ python3 src/memfd_buffer_backend_benchmark/memfd_buffer_backend_benchmark/script
 
 No `rmw_fastrtps` patches are applied for the zenoh run. See
 [`ZENOH_BENCHMARK_REPORT.md`](ZENOH_BENCHMARK_REPORT.md) for the recorded
-full-matrix comparison and figures.
+lazy-only comparison and figures.
 
 Run the complete 16-way matrix:
 
