@@ -95,7 +95,7 @@ def plot_memfd_latency(data, output):
 def plot_backend_latency(data, output):
     figure, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=False)
     for axis, backend, title in zip(axes, ("cpu", "memfd"), ("CPU backend", "memfd backend")):
-        for variant, linestyle in (("lazy", "-"), ("zenoh", "--")):
+        for variant, linestyle in (("lazy", "-"), ("zenoh", "-")):
             for percentile_name, alpha in (("p50", 1.0), ("p95", 0.48)):
                 values = [
                     data[variant][("inter_process", backend, size)]["e2e"][percentile_name]
