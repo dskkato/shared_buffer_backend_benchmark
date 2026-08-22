@@ -15,10 +15,11 @@ import matplotlib.pyplot as plt
 
 SIZES = (64, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216)
 VARIANTS = ("lazy", "zenoh")
-COLORS = {
-    "lazy": "#A3BE8C",
-    "zenoh": "#BF616A",
+FASTRTPS_COLORS = {
+    "cpu": "#5E81AC",
+    "memfd": "#D08770",
 }
+ZENOH_COLOR = "#00A6D6"
 LABELS = {
     "lazy": "fastrtps lazy",
     "zenoh": "zenoh",
@@ -29,6 +30,11 @@ PATHS = (
     ("intra_process_va", "cpu", "Intra-process CPU"),
     ("intra_process_va", "memfd", "Intra-process memfd"),
 )
+LATENCY_YLIM = (10, 3e4)
+
+
+def color_for(variant, backend):
+    return FASTRTPS_COLORS[backend] if variant == "lazy" else ZENOH_COLOR
 
 
 def size_label(size):
@@ -71,7 +77,7 @@ def setup_axis(axis):
     axis.set_xscale("log", base=2)
     axis.set_xticks(SIZES)
     axis.set_xticklabels([size_label(size) for size in SIZES], rotation=35, ha="right")
-    axis.grid(True, which="both", color="#D8DEE9", linewidth=0.7)
+    axis.grid(True, which="major", color="#D8DEE9", linewidth=0.7)
     axis.set_axisbelow(True)
 
 
@@ -81,9 +87,13 @@ def plot_memfd_latency(data, output):
         values = [data[variant][("inter_process", "memfd", size)]["e2e"]["p50"] for size in SIZES]
         axis.plot(
             SIZES, values, marker="o", linewidth=2, markersize=4,
-            color=COLORS[variant], label=LABELS[variant],
+            color=color_for(variant, "memfd"),
+            linestyle="--" if variant == "zenoh" else "-",
+            label=LABELS[variant],
         )
     setup_axis(axis)
+    axis.set_yscale("log")
+    axis.set_ylim(*LATENCY_YLIM)
     axis.set_ylabel("End-to-end latency p50 (µs)")
     axis.set_title("Inter-process memfd latency: zenoh vs fastrtps lazy")
     axis.legend(ncol=2, frameon=False)
@@ -93,20 +103,23 @@ def plot_memfd_latency(data, output):
 
 
 def plot_backend_latency(data, output):
-    figure, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=False)
+    figure, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=True)
     for axis, backend, title in zip(axes, ("cpu", "memfd"), ("CPU backend", "memfd backend")):
-        for variant, linestyle in (("lazy", "-"), ("zenoh", "-")):
+        for variant, linestyle in (("lazy", "-"), ("zenoh", "--")):
             for percentile_name, alpha in (("p50", 1.0), ("p95", 0.48)):
                 values = [
                     data[variant][("inter_process", backend, size)]["e2e"][percentile_name]
                     for size in SIZES
                 ]
                 label = f"{LABELS[variant]} {percentile_name}" if percentile_name == "p50" else None
+                color = color_for(variant, backend)
                 axis.plot(
                     SIZES, values, marker="o", markersize=3.5, linewidth=2 if percentile_name == "p50" else 1.2,
-                    linestyle=linestyle, color=COLORS[variant], alpha=alpha, label=label,
+                    linestyle=linestyle, color=color, alpha=alpha, label=label,
                 )
         setup_axis(axis)
+        axis.set_yscale("log")
+        axis.set_ylim(*LATENCY_YLIM)
         axis.set_title(title)
         axis.set_xlabel("Payload")
         axis.set_ylabel("End-to-end latency (µs)")
@@ -127,15 +140,18 @@ def plot_one_mib_distributions(raw, output):
             values = raw[variant][("inter_process", "memfd", 1048576)][metric]
             bins = range(0, x_limit + bin_width, bin_width)
             axis.hist(
-                values, bins=bins, alpha=0.45, color=COLORS[variant],
-                edgecolor=COLORS[variant], linewidth=0.7, label=LABELS[variant],
+                values, bins=bins, alpha=0.45, color=color_for(variant, "memfd"),
+                edgecolor=color_for(variant, "memfd"), linewidth=0.7, label=LABELS[variant],
             )
-            axis.axvline(median(values), color=COLORS[variant], linestyle="--", linewidth=1.5)
+            axis.axvline(
+                median(values), color=color_for(variant, "memfd"),
+                linestyle="--", linewidth=1.5,
+            )
         axis.set_xlim(0, x_limit)
         axis.set_title(title)
         axis.set_xlabel("Time (µs); dashed lines = p50")
         axis.set_ylabel("Frequency (samples)")
-        axis.grid(True, color="#D8DEE9", linewidth=0.7)
+        axis.grid(True, which="major", color="#D8DEE9", linewidth=0.7)
         axis.set_axisbelow(True)
         axis.legend(frameon=False)
     figure.suptitle("1 MiB inter-process memfd raw timing distributions (n=100 each)")
