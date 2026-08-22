@@ -3,9 +3,11 @@
 ## Executive summary
 
 This report compares the unmodified `rmw_zenoh_cpp` path with the
-`rmw_fastrtps_cpp` `lazy` implementation. The lazy implementation is the
-fastrtps behavior expected to be merged upstream, so it is the sole fastrtps
-reference for this comparison. No fastrtps patch was applied to the zenoh run.
+`rmw_fastrtps_cpp` + `lazy` allocation. The lazy allocation patch was
+submitted to upstream, so it is the sole fastrtps reference for this
+comparison. No fastrtps patch was applied to the zenoh run.
+
+See: https://github.com/ros2/rmw_fastrtps/pull/904
 
 The main results are:
 
@@ -102,13 +104,6 @@ At selected payload sizes, the inter-process CPU and memfd results are:
 | 4 MiB memfd | 915.6 / 1,049.2 | 917.1 / 1,057.0 | +0.2% |
 | 16 MiB CPU | 14,786.7 / 15,270.8 | 16,721.3 / 22,369.4 | +13.1% |
 | 16 MiB memfd | 727.6 / 805.7 | 768.0 / 860.5 | +5.6% |
-
-The geometric-mean zenoh/fastrtps-lazy p50 ratios across all nine sizes are
-1.050× for inter-process CPU (+5.0%), 1.019× for inter-process memfd (+1.9%),
-0.971× for intra-process CPU (-2.9%), and 0.914× for intra-process memfd
-(-8.6%).
-
-![Zenoh p50 change across all paths](figures/zenoh-comparison/zenoh-vs-fastrtps-heatmap.png)
 
 ## Publisher-side timing at 1 MiB
 
