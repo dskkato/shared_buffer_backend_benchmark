@@ -29,9 +29,9 @@ VARIANT_COLORS = {
 }
 PATHS = (
     ("inter_process", "cpu", "Inter CPU"),
-    ("inter_process", "memfd", "Inter SHM"),
+    ("inter_process", "shared_buffer", "Inter SHM"),
     ("intra_process_va", "cpu", "Intra CPU"),
-    ("intra_process_va", "memfd", "Intra SHM"),
+    ("intra_process_va", "shared_buffer", "Intra SHM"),
 )
 PATH_COLORS = {
     "Inter CPU": "#5E81AC",
@@ -109,7 +109,7 @@ def distribution_x_limit(raw_results, metric, tick_step):
     values = [
         row[metric]
         for variant in VARIANTS
-        for backend in ("cpu", "memfd")
+        for backend in ("cpu", "shared_buffer")
         for row in raw_results[(variant, "inter_process", backend, ONE_MIB)]
     ]
     return max(tick_step, math.ceil(max(values) * 1.05 / tick_step) * tick_step)
@@ -188,7 +188,7 @@ def plot_baseline_inter_histogram(raw_results, output_dir, x_limit):
     )
     bins = range(0, x_limit + 250, 250)
     for axis, backend, backend_label in zip(
-        axes, ("cpu", "memfd"), ("Inter CPU", "Inter SHM")
+        axes, ("cpu", "shared_buffer"), ("Inter CPU", "Inter SHM")
     ):
         rows = raw_results[("baseline", "inter_process", backend, ONE_MIB)]
         values = [row["e2e_latency_us"] for row in rows]
@@ -342,7 +342,7 @@ def main():
     for variant in VARIANTS:
         plot_variant_paths(results, raw_results, args.output_dir, variant)
     plot_inter_variant_comparison(
-        results, args.output_dir, "memfd", "SHM", "inter-shm-variant-comparison"
+        results, args.output_dir, "shared_buffer", "SHM", "inter-shm-variant-comparison"
     )
     plot_inter_variant_comparison(
         results, args.output_dir, "cpu", "CPU", "inter-cpu-variant-comparison"
@@ -364,7 +364,7 @@ def main():
     plot_one_mib_histogram(
         raw_results,
         args.output_dir,
-        "memfd",
+        "shared_buffer",
         "SHM",
         "1m-inter-shm-latency-distribution",
         e2e_x_limit,
@@ -392,7 +392,7 @@ def main():
     plot_one_mib_histogram(
         raw_results,
         args.output_dir,
-        "memfd",
+        "shared_buffer",
         "SHM",
         "1m-inter-shm-publish-duration-distribution",
         publish_x_limit,

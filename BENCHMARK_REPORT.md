@@ -34,7 +34,7 @@ The matrix contains:
 - 30 messages per case at 10 Hz; 10 warm-up messages are excluded, leaving
   20 measured samples.
 - 2 communication modes: `inter_process` and `intra_process_va`.
-- 2 backends: `cpu` and `memfd` (called SHM below).
+- 2 backends: `cpu` and `shared_buffer` (called SHM below).
 
 The summary contains 720 cases and the raw files contain 14,400 measured
 sample rows. The summary table cells below are calculated directly from the 100
@@ -267,7 +267,7 @@ The 16-way rerun itself is orchestrated with:
 ```bash
 source ~/ros2_lyrical/install/setup.bash
 source install/setup.bash
-ros2 run memfd_buffer_backend_benchmark run_16way_benchmark.py \
+ros2 run shared_buffer_backend_benchmark run_16way_benchmark.py \
   --output-dir benchmark-results-16way-rerun \
   --overwrite
 ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run old memfd backend CPU/memfd pub/sub latency comparisons."""
+"""Run shared-buffer backend CPU/shared-buffer pub/sub latency comparisons."""
 
 import argparse
 import csv
@@ -44,8 +44,8 @@ def command(role, mode, size, count, rate, warmup, affinity, raw_output=None):
     command = [
         "ros2",
         "run",
-        "memfd_buffer_backend_benchmark",
-        "memfd_buffer_backend_e2e_node",
+        "shared_buffer_backend_benchmark",
+        "shared_buffer_backend_e2e_node",
         "--role",
         role,
         "--mode",
@@ -232,7 +232,7 @@ def run_intra_process_case(mode, size, count, rate, warmup, env, affinity, raw_d
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", default="memfd-old-pubsub-results.csv")
+    parser.add_argument("--output", default="shared-buffer-pubsub-results.csv")
     parser.add_argument(
         "--sizes",
         default="64,1024,4096,16384,65536,262144,1048576,4194304,16777216",
@@ -249,7 +249,7 @@ def main():
     )
     parser.add_argument("--variant", default="unspecified")
     parser.add_argument("--communications", default="inter_process,intra_process_va")
-    parser.add_argument("--modes", default="cpu,memfd")
+    parser.add_argument("--modes", default="cpu,shared_buffer")
     parser.add_argument("--publisher-affinity")
     parser.add_argument("--subscriber-affinity")
     parser.add_argument("--intra-affinity")
