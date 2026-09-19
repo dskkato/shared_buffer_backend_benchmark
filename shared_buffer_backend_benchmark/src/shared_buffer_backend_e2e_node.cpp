@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "memfd_buffer/memfd_buffer_api.hpp"
+#include "shared_buffer/shared_buffer_api.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
@@ -80,7 +80,7 @@ public:
   E2eNode(
     const std::string & role, const std::string & mode, std::size_t size, std::size_t count,
     int rate, std::size_t warmup, bool use_intra_process, const std::string & raw_output_path)
-  : Node("memfd_old_e2e_" + role + "_" + mode, node_options_for(use_intra_process)),
+  : Node("shared_buffer_e2e_" + role + "_" + mode, node_options_for(use_intra_process)),
     role_(role),
     mode_(mode),
     communication_(use_intra_process ? "intra_process_va" : "inter_process"),
@@ -105,7 +105,7 @@ public:
                                                    ? rclcpp::IntraProcessSetting::Enable
                                                    : rclcpp::IntraProcessSetting::Disable;
       publisher_options.intra_process_buffer_type = rclcpp::IntraProcessBufferType::SharedPtr;
-      pub_ = create_publisher<Image>("memfd_old_benchmark_image", qos, publisher_options);
+      pub_ = create_publisher<Image>("shared_buffer_benchmark_image", qos, publisher_options);
       timer_ =
         create_wall_timer(std::chrono::milliseconds(1000 / rate), [this] { publish_once(); });
     }
@@ -116,11 +116,11 @@ public:
                                                       ? rclcpp::IntraProcessSetting::Enable
                                                       : rclcpp::IntraProcessSetting::Disable;
       subscription_options.intra_process_buffer_type = rclcpp::IntraProcessBufferType::SharedPtr;
-      if (mode_ == "memfd") {
-        subscription_options.acceptable_buffer_backends = "any";
+      if (mode_ == "shared_buffer") {
+        subscription_options.acceptable_buffer_backends = "shared_buffer";
       }
       sub_ = create_subscription<Image>(
-        "memfd_old_benchmark_image", qos,
+        "shared_buffer_benchmark_image", qos,
         [this](ImageConstSharedPtr msg) { receive(std::move(msg)); }, subscription_options);
     }
   }
@@ -146,9 +146,9 @@ private:
     msg->step = static_cast<std::uint32_t>(size_);
 
     std::uintptr_t published_data_address = 0;
-    if (mode_ == "memfd") {
-      msg->data = memfd_buffer_backend::allocate_buffer(size_);
-      auto view = memfd_buffer_backend::from_output_buffer(msg->data);
+    if (mode_ == "shared_buffer") {
+      msg->data = shared_buffer::allocate_buffer(size_);
+      auto view = shared_buffer::from_output_buffer(msg->data);
       std::memset(view.get_ptr(), static_cast<int>(sent_ & 0xff), size_);
       published_data_address = reinterpret_cast<std::uintptr_t>(view.get_ptr());
     } else {
@@ -179,7 +179,9 @@ private:
   void receive(ImageConstSharedPtr msg)
   {
     const auto backend = msg->data.get_backend_type();
-    if ((mode_ == "memfd" && backend != "memfd") || (mode_ == "cpu" && backend != "cpu")) {
+    if ((mode_ == "shared_buffer" && backend != "shared_buffer") ||
+      (mode_ == "cpu" && backend != "cpu"))
+    {
       std::cerr << "RESULT,error,backend_mismatch," << communication_ << ',' << mode_ << ','
                 << backend << std::endl;
       rclcpp::shutdown();
@@ -189,8 +191,8 @@ private:
     std::uintptr_t received_data_address = 0;
     volatile std::uint8_t sample = 0;
     Clock::time_point end;
-    if (mode_ == "memfd") {
-      auto view = memfd_buffer_backend::from_input_buffer(msg->data);
+    if (mode_ == "shared_buffer") {
+      auto view = shared_buffer::from_input_buffer(msg->data);
       received_data_address = reinterpret_cast<std::uintptr_t>(view.get_ptr());
       sample = view.get_ptr()[0];
       end = Clock::now();
@@ -283,7 +285,10 @@ int main(int argc, char ** argv)
   const auto role = value_of(argc, argv, "--role", "");
   const auto mode = value_of(argc, argv, "--mode", "cpu");
   const bool use_intra_process = role == "intra";
-  if ((role != "pub" && role != "sub" && role != "intra") || (mode != "cpu" && mode != "memfd")) {
+  if (
+    (role != "pub" && role != "sub" && role != "intra") ||
+    (mode != "cpu" && mode != "shared_buffer"))
+  {
     rclcpp::shutdown();
     return 2;
   }

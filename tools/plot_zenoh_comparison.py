@@ -17,7 +17,7 @@ SIZES = (64, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216)
 VARIANTS = ("lazy", "zenoh")
 FASTRTPS_COLORS = {
     "cpu": "#5E81AC",
-    "memfd": "#D08770",
+    "shared_buffer": "#D08770",
 }
 ZENOH_COLOR = "#00A6D6"
 LABELS = {
@@ -26,9 +26,9 @@ LABELS = {
 }
 PATHS = (
     ("inter_process", "cpu", "Inter-process CPU"),
-    ("inter_process", "memfd", "Inter-process memfd"),
+    ("inter_process", "shared_buffer", "Inter-process shared buffer"),
     ("intra_process_va", "cpu", "Intra-process CPU"),
-    ("intra_process_va", "memfd", "Intra-process memfd"),
+    ("intra_process_va", "shared_buffer", "Intra-process shared buffer"),
 )
 LATENCY_YLIM = (10, 3e4)
 
@@ -81,13 +81,13 @@ def setup_axis(axis):
     axis.set_axisbelow(True)
 
 
-def plot_memfd_latency(data, output):
+def plot_shared_buffer_latency(data, output):
     figure, axis = plt.subplots(figsize=(10.5, 5.8))
     for variant in VARIANTS:
-        values = [data[variant][("inter_process", "memfd", size)]["e2e"]["p50"] for size in SIZES]
+        values = [data[variant][("inter_process", "shared_buffer", size)]["e2e"]["p50"] for size in SIZES]
         axis.plot(
             SIZES, values, marker="o", linewidth=2, markersize=4,
-            color=color_for(variant, "memfd"),
+            color=color_for(variant, "shared_buffer"),
             linestyle="--" if variant == "zenoh" else "-",
             label=LABELS[variant],
         )
@@ -95,7 +95,7 @@ def plot_memfd_latency(data, output):
     axis.set_yscale("log")
     axis.set_ylim(*LATENCY_YLIM)
     axis.set_ylabel("End-to-end latency p50 (µs)")
-    axis.set_title("Inter-process memfd latency: zenoh vs fastrtps lazy")
+    axis.set_title("Inter-process shared-buffer latency: zenoh vs fastrtps lazy")
     axis.legend(ncol=2, frameon=False)
     figure.tight_layout()
     figure.savefig(output, dpi=180)
@@ -104,7 +104,9 @@ def plot_memfd_latency(data, output):
 
 def plot_backend_latency(data, output):
     figure, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=True)
-    for axis, backend, title in zip(axes, ("cpu", "memfd"), ("CPU backend", "memfd backend")):
+    for axis, backend, title in zip(
+        axes, ("cpu", "shared_buffer"), ("CPU backend", "shared-buffer backend")
+    ):
         for variant, linestyle in (("lazy", "-"), ("zenoh", "--")):
             for percentile_name, alpha in (("p50", 1.0), ("p95", 0.48)):
                 values = [
@@ -137,14 +139,14 @@ def plot_one_mib_distributions(raw, output):
         (axes[1], "publish", "Publisher publish() duration", 1200, 50),
     ):
         for variant in VARIANTS:
-            values = raw[variant][("inter_process", "memfd", 1048576)][metric]
+            values = raw[variant][("inter_process", "shared_buffer", 1048576)][metric]
             bins = range(0, x_limit + bin_width, bin_width)
             axis.hist(
-                values, bins=bins, alpha=0.45, color=color_for(variant, "memfd"),
-                edgecolor=color_for(variant, "memfd"), linewidth=0.7, label=LABELS[variant],
+                values, bins=bins, alpha=0.45, color=color_for(variant, "shared_buffer"),
+                edgecolor=color_for(variant, "shared_buffer"), linewidth=0.7, label=LABELS[variant],
             )
             axis.axvline(
-                median(values), color=color_for(variant, "memfd"),
+                median(values), color=color_for(variant, "shared_buffer"),
                 linestyle="--", linewidth=1.5,
             )
         axis.set_xlim(0, x_limit)
@@ -201,7 +203,7 @@ def main():
     data = {variant: summarize(values) for variant, values in raw.items()}
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    plot_memfd_latency(data, args.output_dir / "inter-process-memfd-latency.png")
+    plot_shared_buffer_latency(data, args.output_dir / "inter-process-memfd-latency.png")
     plot_backend_latency(data, args.output_dir / "inter-process-backend-latency.png")
     plot_one_mib_distributions(raw, args.output_dir / "1m-memfd-distributions.png")
     plot_heatmap(data, args.output_dir / "zenoh-vs-fastrtps-heatmap.png")

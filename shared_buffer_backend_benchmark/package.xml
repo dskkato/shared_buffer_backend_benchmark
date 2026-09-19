@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>memfd_buffer_backend_benchmark</name>
+  <name>shared_buffer_backend_benchmark</name>
   <version>0.0.0</version>
-  <description>Inter-process and intra-process VA-sharing pub/sub benchmarks for the memfd-backed rosidl::Buffer backend.</description>
+  <description>Inter-process and intra-process VA-sharing pub/sub benchmarks for the shared-memory rosidl::Buffer backend.</description>
 
   <maintainer email="kato.daisuke429@gmail.com">dskkato</maintainer>
   <license>Apache-2.0</license>
@@ -11,7 +11,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>memfd_buffer_backend</depend>
+  <depend>shared_buffer</depend>
+  <depend>shared_buffer_backend</depend>
   <depend>rclcpp</depend>
   <depend>rcutils</depend>
   <depend>rmw</depend>
